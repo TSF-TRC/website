@@ -1,0 +1,175 @@
+---
+import { site } from "~/data/site";
+import { workstreams } from "~/data/workstreams";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="footer-col footer-col--brand">
+      <div class="footer-brand">
+        <span class="eyebrow">{site.parent.shortName} research committee</span>
+        <p class="footer-brand__name">Tooling Research Committee</p>
+        <p class="footer-brand__line">{site.tagline}.</p>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h4 class="footer-heading">Workstreams</h4>
+      <ul>
+        {workstreams.map((w) => (
+          <li>
+            <a href={`${base}/workstreams/${w.slug}`}>{w.shortTitle}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4 class="footer-heading">Committee</h4>
+      <ul>
+        <li><a href={`${base}/about`}>About &amp; members</a></li>
+        <li><a href={`${base}/workstreams`}>All workstreams</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4 class="footer-heading">Parent</h4>
+      <ul>
+        <li class="footer-parent">
+          <a href={site.parent.url} rel="noopener">{site.parent.name} ↗</a>
+          <ul class="footer-subtree">
+            <li>
+              <a href={site.parent.programsUrl} rel="noopener">All programs ↗</a>
+            </li>
+            {site.siblingCommittees.map((c) => (
+              <li>
+                <a href={c.url} rel="noopener">{c.shortName} Research Committee ↗</a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container site-footer__base">
+    <p>© {year} {site.parent.name}. Published under CC&nbsp;BY&nbsp;4.0 unless otherwise noted.</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--space-10);
+    border-top: 1px solid var(--rule);
+    background: var(--paper-soft);
+    color: var(--ink-soft);
+  }
+
+  .site-footer__inner {
+    display: grid;
+    grid-template-columns: 1.5fr repeat(3, 1fr);
+    gap: var(--space-7);
+    padding-block: var(--space-8);
+  }
+
+  .footer-col h4 {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: var(--space-4);
+  }
+
+  .footer-col > ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .footer-col > ul > li > a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: var(--step--1);
+  }
+
+  .footer-col a:hover {
+    color: var(--accent-deep);
+    text-decoration: underline;
+  }
+
+  .footer-parent > a {
+    color: var(--ink);
+    font-weight: 540;
+    font-size: var(--step--1);
+  }
+
+  .footer-subtree {
+    list-style: none;
+    margin: var(--space-3) 0 var(--space-2) var(--space-4);
+    padding: 0 0 0 var(--space-4);
+    border-left: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .footer-subtree li {
+    line-height: 1.35;
+  }
+
+  .footer-subtree a {
+    font-size: var(--step--1);
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .footer-subtree a:hover { color: var(--accent-deep); }
+
+  .footer-brand .eyebrow { color: var(--muted); }
+
+  .footer-brand__name {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    font-weight: 460;
+    margin-top: var(--space-3);
+    line-height: 1.15;
+    font-variation-settings: "opsz" 36;
+    color: var(--ink);
+  }
+
+  .footer-brand__line {
+    margin-top: var(--space-3);
+    color: var(--muted);
+    font-size: var(--step--1);
+    max-width: 28ch;
+  }
+
+  .site-footer__base {
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--rule-soft);
+    color: var(--muted);
+    font-size: var(--step--2);
+  }
+
+  @media (max-width: 820px) {
+    .site-footer__inner {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6);
+    }
+    .footer-col--brand { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 480px) {
+    .site-footer__inner {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

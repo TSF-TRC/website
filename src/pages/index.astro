@@ -1,0 +1,265 @@
+---
+import Base from "~/layouts/Base.astro";
+import WorkstreamCard from "~/components/WorkstreamCard.astro";
+import { workstreams } from "~/data/workstreams";
+import { site } from "~/data/site";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Base>
+  <section class="hero">
+    <div class="container hero__inner">
+      <span class="eyebrow">{site.parent.shortName} · Research committee · Inaugural year</span>
+      <h1 class="hero__headline">
+        Collaborative research<br />
+        on the <em>tools</em> that<br />
+        protect online communities.
+      </h1>
+      <p class="lede hero__lede">
+        The Tooling Research Committee brings together researchers, practitioners, and engineers to study
+        what trust &amp; safety teams actually need — producing datasets, frameworks, and maps
+        that make safety research easier to find and put to use.
+      </p>
+      <div class="hero__cta">
+        <a href={`${base}/workstreams`} class="btn btn--primary">
+          See the workstreams
+          <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true">
+            <path d="M1 5H13M13 5L9 1M13 5L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          </svg>
+        </a>
+        <a href={`${base}/about`} class="btn btn--ghost">Read the mission</a>
+      </div>
+    </div>
+    <div class="hero__rule" aria-hidden="true"></div>
+  </section>
+
+  <section class="workstreams-section">
+    <div class="container">
+      <header class="section-header">
+        <span class="eyebrow">Three projects · Year one</span>
+        <h2 class="section-title">
+          Where the committee is putting its work.
+        </h2>
+      </header>
+
+      <div class="ws-grid">
+        {workstreams.map((w) => <WorkstreamCard workstream={w} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="mission">
+    <div class="container mission__inner">
+      <div class="mission__col mission__col--label">
+        <span class="eyebrow">Why this exists</span>
+      </div>
+      <div class="mission__col mission__col--prose">
+        <p class="mission__lead">
+          Safety tooling is the connective tissue of healthy online platforms — and yet
+          much of it lives in proprietary stacks, behind NDAs, or in folk knowledge
+          passed between practitioners.
+        </p>
+        <p class="mission__body">
+          The TRC is a research committee of the <a href={site.parent.url} rel="noopener">{site.parent.name}</a>.
+          We connect researchers, practitioners, and engineers across industry, academia, and
+          civil society to advance the field's understanding of safety tooling — and to make
+          the research, datasets, and frameworks behind it easier to find and put to use. Our
+          outputs are built for practitioners to adopt and for the field to extend.
+        </p>
+        <p class="mission__links">
+          <a href={site.parent.parentPageUrl} rel="noopener">Committee at the {site.parent.shortName} ↗</a>
+          <a href={site.parent.programsUrl} rel="noopener">All {site.parent.shortName} programs ↗</a>
+        </p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Hero */
+  .hero {
+    padding-block: clamp(var(--space-8), 4vw + 2rem, var(--space-10));
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    inset: 0;
+    background:
+      radial-gradient(60rem 30rem at 100% -10%, var(--accent-tint), transparent 60%),
+      radial-gradient(40rem 20rem at -10% 110%, color-mix(in oklab, var(--highlight) 18%, transparent), transparent 60%);
+    opacity: 0.85;
+    z-index: 0;
+  }
+
+  .hero__inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    max-width: 60rem;
+  }
+
+  .hero__headline {
+    font-size: var(--step-7);
+    line-height: 0.98;
+    font-weight: 420;
+    letter-spacing: -0.025em;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+    margin-top: var(--space-2);
+  }
+
+  .hero__headline em {
+    font-style: italic;
+    font-weight: 380;
+    font-variation-settings: "opsz" 144, "SOFT" 100;
+    color: var(--accent-deep);
+  }
+
+  .hero__lede {
+    max-width: 38rem;
+    margin-top: var(--space-3);
+  }
+
+  .hero__cta {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    flex-wrap: wrap;
+  }
+
+  .hero__rule {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rule) 20%, var(--rule) 80%, transparent);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.85em 1.4em;
+    border-radius: 999px;
+    font-size: var(--step--1);
+    font-weight: 540;
+    text-decoration: none;
+    transition: transform 200ms var(--ease), background 200ms var(--ease), color 200ms var(--ease), border-color 200ms var(--ease);
+    border: 1px solid transparent;
+    letter-spacing: 0.01em;
+  }
+
+  .btn--primary {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+  }
+
+  .btn--primary:hover {
+    background: var(--accent-deep);
+    color: var(--paper);
+    text-decoration: none;
+  }
+
+  .btn--ghost {
+    color: var(--ink);
+    border-color: var(--rule);
+    background: transparent;
+  }
+
+  .btn--ghost:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--surface);
+  }
+
+  /* Workstreams section */
+  .workstreams-section {
+    padding-block: var(--space-9);
+  }
+
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-7);
+    max-width: 36rem;
+  }
+
+  .section-title {
+    font-size: var(--step-4);
+    letter-spacing: -0.015em;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+
+  .ws-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+  }
+
+  @media (max-width: 980px) {
+    .ws-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 660px) {
+    .ws-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Mission */
+  .mission {
+    border-top: 1px solid var(--rule);
+    padding-block: var(--space-9);
+    background: var(--paper-soft);
+  }
+
+  .mission__inner {
+    display: grid;
+    grid-template-columns: 18rem 1fr;
+    gap: var(--space-8);
+  }
+
+  .mission__col--prose {
+    max-width: var(--measure-prose);
+  }
+
+  .mission__lead {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    line-height: 1.22;
+    font-weight: 420;
+    color: var(--ink);
+    font-variation-settings: "opsz" 60, "SOFT" 30;
+    letter-spacing: -0.01em;
+  }
+
+  .mission__body {
+    margin-top: var(--space-5);
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+    line-height: 1.65;
+  }
+
+  .mission__links {
+    margin-top: var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 820px) {
+    .mission__inner {
+      grid-template-columns: 1fr;
+      gap: var(--space-5);
+    }
+  }
+</style>

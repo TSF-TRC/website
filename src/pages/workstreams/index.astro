@@ -1,0 +1,181 @@
+---
+import Base from "~/layouts/Base.astro";
+import { workstreams } from "~/data/workstreams";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<Base
+  title="Workstreams"
+  description="The Tooling Research Committee's three inaugural projects: evaluation datasets, a trust & safety maturity model, and a living tooling map."
+>
+  <header class="ws-hero container">
+    <span class="eyebrow">Year one · Three projects</span>
+    <h1>The workstreams.</h1>
+    <p class="lede">
+      Committee members chose three projects to anchor the inaugural year.
+      Each takes a different cut at the same question: <em>what does the field
+      need that it doesn't already have?</em>
+    </p>
+  </header>
+
+  <ol class="ws-list container">
+    {workstreams.map((w, i) => (
+      <li class="ws-entry" data-index={i}>
+        <a class="ws-entry__link" href={`${base}/workstreams/${w.slug}`}>
+          <div class="ws-entry__head">
+            <span class="ws-entry__num">{w.number}</span>
+            <span class="ws-entry__divider" aria-hidden="true"></span>
+            <span class="ws-entry__kicker">Workstream</span>
+          </div>
+          <div class="ws-entry__body">
+            <h2 class="ws-entry__title">{w.title}</h2>
+            <p class="ws-entry__tag">{w.tagline}</p>
+            <p class="ws-entry__desc">{w.description}</p>
+            <span class="ws-entry__cta">
+              Read more about {w.shortTitle}
+              <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true">
+                <path d="M1 5H13M13 5L9 1M13 5L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+              </svg>
+            </span>
+          </div>
+        </a>
+      </li>
+    ))}
+  </ol>
+</Base>
+
+<style>
+  .ws-hero {
+    padding-block: var(--space-9) var(--space-7);
+    max-width: var(--measure-wide);
+  }
+
+  .ws-hero h1 {
+    margin-top: var(--space-3);
+    font-size: var(--step-6);
+    letter-spacing: -0.025em;
+  }
+
+  .ws-hero .lede {
+    margin-top: var(--space-5);
+    max-width: 42rem;
+  }
+
+  .ws-hero .lede em {
+    color: var(--accent-deep);
+    font-style: italic;
+    font-variation-settings: "opsz" 36, "SOFT" 100;
+  }
+
+  .ws-list {
+    padding-block: var(--space-6) var(--space-9);
+    list-style: none;
+    margin: 0;
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ws-entry {
+    border-top: 1px solid var(--rule);
+  }
+
+  .ws-entry:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .ws-entry__link {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: var(--space-6);
+    padding-block: var(--space-7);
+    color: var(--ink);
+    text-decoration: none;
+    transition: background 250ms var(--ease);
+  }
+
+  .ws-entry__link:hover {
+    background: linear-gradient(90deg, var(--accent-tint) 0%, transparent 70%);
+    text-decoration: none;
+  }
+
+  .ws-entry__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    color: var(--muted);
+  }
+
+  .ws-entry__num {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    font-weight: 440;
+    color: var(--accent);
+    font-variation-settings: "opsz" 60, "SOFT" 30;
+  }
+
+  .ws-entry__divider {
+    width: 2rem;
+    height: 1px;
+    background: var(--rule);
+    align-self: center;
+  }
+
+  .ws-entry__kicker {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 540;
+  }
+
+  .ws-entry__title {
+    font-size: var(--step-3);
+    font-weight: 460;
+    letter-spacing: -0.015em;
+    line-height: 1.12;
+    max-width: 28ch;
+    font-variation-settings: "opsz" 72, "SOFT" 30;
+  }
+
+  .ws-entry__tag {
+    margin-top: var(--space-3);
+    color: var(--accent-deep);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--step-1);
+    font-weight: 380;
+    font-variation-settings: "opsz" 24, "SOFT" 100;
+  }
+
+  .ws-entry__desc {
+    margin-top: var(--space-3);
+    color: var(--ink-soft);
+    max-width: var(--measure-prose);
+    line-height: 1.6;
+  }
+
+  .ws-entry__cta {
+    margin-top: var(--space-5);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: var(--step--1);
+    font-weight: 540;
+    color: var(--accent);
+  }
+
+  .ws-entry__link:hover .ws-entry__cta svg {
+    transform: translateX(3px);
+  }
+
+  .ws-entry__cta svg { transition: transform 220ms var(--ease); }
+
+  @media (max-width: 720px) {
+    .ws-entry__link {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+  }
+</style>

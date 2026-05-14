@@ -1,0 +1,48 @@
+---
+import Base from "~/layouts/Base.astro";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+<Base title="Not found">
+  <section class="nf container">
+    <span class="nf__num">404</span>
+    <h1>This page hasn't been written yet.</h1>
+    <p class="lede">
+      You followed a link to a corner of the site that doesn't exist — or maybe
+      doesn't exist <em>yet</em>. The committee is in its inaugural year and
+      pages are still landing.
+    </p>
+    <div class="nf__links">
+      <a href={`${base}/`} class="nf__back">← Back to the homepage</a>
+      <a href={`${base}/workstreams`}>See the workstreams</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    padding-block: var(--space-9) var(--space-10);
+    max-width: 44rem;
+  }
+  .nf__num {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--step-7);
+    color: var(--accent);
+    font-variation-settings: "opsz" 144, "SOFT" 100;
+    line-height: 1;
+  }
+  .nf h1 {
+    margin-top: var(--space-4);
+    font-size: var(--step-5);
+    letter-spacing: -0.02em;
+  }
+  .nf .lede { margin-top: var(--space-4); }
+  .nf .lede em { font-style: italic; color: var(--accent-deep); }
+  .nf__links {
+    margin-top: var(--space-6);
+    display: flex;
+    gap: var(--space-5);
+    flex-wrap: wrap;
+  }
+  .nf__back { font-weight: 540; }
+</style>

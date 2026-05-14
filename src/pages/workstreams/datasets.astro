@@ -1,0 +1,173 @@
+---
+import Base from "~/layouts/Base.astro";
+import WorkstreamHero from "~/components/WorkstreamHero.astro";
+import { workstreamBySlug } from "~/data/workstreams";
+import { site } from "~/data/site";
+
+const workstream = workstreamBySlug("datasets")!;
+---
+
+<Base
+  title={workstream.shortTitle}
+  description={workstream.description}
+>
+  <WorkstreamHero workstream={workstream} status="Forming · Inaugural year" />
+
+  <article class="ws-body container">
+    <div class="ws-body__grid">
+      <aside class="ws-aside">
+        <div class="ws-aside__block">
+          <span class="eyebrow">Status</span>
+          <p class="ws-aside__value">Forming</p>
+          <p class="ws-aside__note">Scoping methodology, recruiting domain experts, identifying source data.</p>
+        </div>
+        <div class="ws-aside__block">
+          <span class="eyebrow">Expected outputs</span>
+          <ul>
+            <li>Audit of existing public safety eval datasets</li>
+            <li>New high-fidelity dataset with published labeling policy</li>
+            <li>Published methodology brief</li>
+          </ul>
+        </div>
+        <div class="ws-aside__block">
+          <span class="eyebrow">Get involved</span>
+          <p>Membership is coordinated through the <a href={site.parent.parentPageUrl} rel="noopener">{site.parent.shortName} committee page ↗</a>.</p>
+        </div>
+      </aside>
+
+      <div class="ws-prose prose">
+        <h2>The problem</h2>
+        <p>
+          Safety evaluation datasets are how the field tells itself whether a model,
+          a classifier, or a pipeline is working. But many of the datasets in
+          widespread use are silent on the labeling policy that produced them and
+          on the provenance of their content — leaving researchers to benchmark
+          against a moving target, and platforms to ship interventions tuned to
+          harms that don't match what they actually see.
+        </p>
+
+        <h2>What we're doing</h2>
+        <p>
+          This workstream takes a two-part approach: <strong>audit</strong> the foundations of
+          existing datasets, and <strong>build</strong> a higher-fidelity alternative.
+        </p>
+        <p>
+          The audit examines policy documentation, provenance, label
+          definitions, and known limitations of the datasets practitioners
+          actually use. The build collaborates with domain experts to develop a
+          new dataset grounded in transparent policies — drawing on either
+          curated real-world data from platforms like Bluesky or expert-vetted
+          synthetic scenarios, depending on the harm category.
+        </p>
+
+        <h2>The deliverable</h2>
+        <p>
+          We will publish both the data and the "Very Good™" policies used to
+          generate it. The aim is to make accountability and granularity the
+          default — so that anyone benchmarking against the dataset can also
+          inspect, contest, or extend the policy behind it.
+        </p>
+
+        <blockquote>
+          The policy is the dataset. Anything else is a black box dressed up as a benchmark.
+        </blockquote>
+
+        <h2>Updates</h2>
+        <p>
+          As outputs publish, they'll appear here and in the
+          <a href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/workstreams`}>workstreams index</a>.
+        </p>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .ws-body {
+    padding-block: var(--space-8) var(--space-9);
+    max-width: var(--measure-wide);
+  }
+
+  .ws-body__grid {
+    display: grid;
+    grid-template-columns: 1fr 18rem;
+    gap: var(--space-8);
+    align-items: start;
+  }
+
+  @media (max-width: 920px) {
+    .ws-body__grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-7);
+    }
+  }
+
+  .ws-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    order: 2;
+    padding: var(--space-5);
+    background: var(--paper-soft);
+    border: 1px solid var(--rule-soft);
+    border-radius: var(--radius-md);
+    position: sticky;
+    top: 6rem;
+  }
+
+  @media (max-width: 920px) {
+    .ws-aside { position: static; order: 1; }
+  }
+
+  .ws-aside__block .eyebrow {
+    margin-bottom: var(--space-3);
+  }
+
+  .ws-aside__value {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    font-weight: 460;
+    letter-spacing: -0.01em;
+    font-variation-settings: "opsz" 36, "SOFT" 30;
+    color: var(--accent-deep);
+  }
+
+  .ws-aside__note {
+    margin-top: var(--space-2);
+    font-size: var(--step--1);
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .ws-aside ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .ws-aside li {
+    font-size: var(--step--1);
+    color: var(--ink-soft);
+    line-height: 1.45;
+  }
+
+  .ws-aside p {
+    font-size: var(--step--1);
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  .ws-prose { max-width: var(--measure-prose); }
+  .ws-prose p:first-of-type::first-letter {
+    font-family: var(--font-display);
+    font-size: 3.6em;
+    line-height: 0.86;
+    float: left;
+    margin: 0.05em 0.08em 0 0;
+    color: var(--accent-deep);
+    font-weight: 440;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+  }
+</style>

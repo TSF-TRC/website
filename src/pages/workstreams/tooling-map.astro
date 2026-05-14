@@ -1,0 +1,850 @@
+---
+import Base from "~/layouts/Base.astro";
+import WorkstreamHero from "~/components/WorkstreamHero.astro";
+import { workstreamBySlug } from "~/data/workstreams";
+import { site } from "~/data/site";
+import { allTopics, topicCounts, tools, type Tool } from "~/data/tools";
+
+const workstream = workstreamBySlug("tooling-map")!;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const mapImage = `${base}/tools-map.png`;
+
+// ───────── Neighborhoods (six districts on the hand-drawn map) ─────────
+// Each district picks up one or more raw topic tags from the spreadsheet.
+// Order matters: tools are assigned to the first matching district.
+// `region` is the area on the 800×600 map image (in image pixels) where
+// pins for that district should cluster, given as an ellipse center + radius.
+type Region = { cx: number; cy: number; rx: number; ry: number };
+type Neighborhood = {
+  id: string;
+  name: string;
+  topics: string[];
+  region: Region;
+  hue: number;
+  sat: number;
+};
+
+const neighborhoods: Neighborhood[] = [
+  {
+    id: "guardrail-heights",
+    name: "Guardrail Heights",
+    topics: ["AI for Safety"],
+    region: { cx: 620, cy: 160, rx: 140, ry: 90 },
+    hue: 200, sat: 50,
+  },
+  {
+    id: "classifier-quarter",
+    name: "Classifier Quarter",
+    topics: ["Classification"],
+    region: { cx: 285, cy: 215, rx: 175, ry: 115 },
+    hue: 110, sat: 45,
+  },
+  {
+    id: "automation-alley",
+    name: "Automation Alley",
+    topics: ["Automated T&S", "Enforcement", "Content moderation"],
+    region: { cx: 430, cy: 350, rx: 110, ry: 75 },
+    hue: 282, sat: 45,
+  },
+  {
+    id: "investigation-inlet",
+    name: "Investigation Inlet",
+    topics: ["Investigation"],
+    region: { cx: 645, cy: 410, rx: 85, ry: 70 },
+    hue: 0, sat: 65,
+  },
+  {
+    id: "reviewers-row",
+    name: "Reviewer's Row",
+    topics: ["Review", "Detection"],
+    region: { cx: 175, cy: 380, rx: 90, ry: 90 },
+    hue: 45, sat: 75,
+  },
+  {
+    id: "the-hashlands",
+    name: "The Hashlands",
+    topics: ["Hash matching"],
+    region: { cx: 380, cy: 500, rx: 160, ry: 65 },
+    hue: 165, sat: 40,
+  },
+];
+
+// Assign each tool to the first matching neighborhood.
+const neighborhoodFor = (tool: Tool): Neighborhood | undefined =>
+  neighborhoods.find((n) => n.topics.some((t) => tool.topics.includes(t)));
+
+const toolsByNeighborhood: Record<string, Tool[]> = Object.fromEntries(
+  neighborhoods.map((n) => [
+    n.id,
+    tools
+      .filter((t) => neighborhoodFor(t)?.id === n.id)
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  ]),
+);
+const stranded = tools.filter((t) => !neighborhoodFor(t));
+
+// Deterministic but organic pin placement inside an elliptical region.
+// We arrange tools on concentric rings + jitter so the result feels
+// scattered rather than tabular.
+const placePins = (region: Region, count: number) => {
+  const positions: { x: number; y: number }[] = [];
+  if (count === 0) return positions;
+
+  // Number of rings scales with count: 1 ring for ≤3, then add a ring per ~5 more.
+  const ringCount = Math.max(1, Math.ceil(Math.sqrt(count / 2)));
+  // Distribute tools across rings, more on the outside.
+  const perRing: number[] = [];
+  let remaining = count;
+  for (let r = 0; r < ringCount; r++) {
+    // Outer rings get more capacity.
+    const weight = r + 1;
+    perRing.push(weight);
+  }
+  const weightSum = perRing.reduce((a, b) => a + b, 0);
+  for (let r = 0; r < ringCount; r++) {
+    perRing[r] = Math.round((perRing[r] / weightSum) * count);
+  }
+  // Adjust rounding error.
+  while (perRing.reduce((a, b) => a + b, 0) < count) perRing[perRing.length - 1]++;
+  while (perRing.reduce((a, b) => a + b, 0) > count) perRing[perRing.length - 1]--;
+
+  let placed = 0;
+  for (let r = 0; r < ringCount; r++) {
+    const n = perRing[r];
+    if (n <= 0) continue;
+    // Ring radius — innermost is at center, outermost near the edge.
+    const radiusFactor = ringCount === 1 ? 0 : r / (ringCount - 1);
+    const rx = region.rx * (0.15 + radiusFactor * 0.78);
+    const ry = region.ry * (0.15 + radiusFactor * 0.78);
+    // Stagger angle so rings don't line up.
+    const angleOffset = r * 0.6 + 0.4;
+    for (let i = 0; i < n; i++) {
+      const angle = (i / n) * Math.PI * 2 + angleOffset;
+      // Jitter for organic feel — deterministic from index.
+      const seed = (placed * 9301 + r * 49297 + 233280) % 100;
+      const jitterR = ((seed * 17) % 100) / 100 - 0.5; // ±0.5
+      const jitterA = ((seed * 23) % 100) / 100 - 0.5; // ±0.5
+      const finalRx = rx * (1 + jitterR * 0.18);
+      const finalRy = ry * (1 + jitterR * 0.18);
+      const finalAngle = angle + jitterA * 0.25;
+      positions.push({
+        x: region.cx + Math.cos(finalAngle) * finalRx,
+        y: region.cy + Math.sin(finalAngle) * finalRy,
+      });
+      placed++;
+    }
+  }
+  return positions;
+};
+
+const sortedTools = [...tools].sort((a, b) => a.name.localeCompare(b.name));
+
+const styleVars = (h: number, s: number) => `--h: ${h}; --s: ${s}%;`;
+---
+
+<Base
+  title={workstream.shortTitle}
+  description="A living, browsable map of trust & safety tools — ingested from the committee's preliminary collection and growing over time."
+>
+  <WorkstreamHero workstream={workstream} status="Building · Living resource" />
+
+  <section class="container tm-intro">
+    <div class="tm-intro__grid">
+      <div class="tm-intro__lead">
+        <h2>A living map of the safety stack.</h2>
+        <p>
+          A growing catalogue of trust &amp; safety tools — open-source and commercial,
+          internal and user-facing. Six neighbourhoods on the map group the tools by what
+          they do; switch to the <strong>card view</strong> to search or filter by topic.
+        </p>
+        <p>
+          The neighbourhood names are an evocative consolidation of the committee's
+          preliminary topic buckets. A formal taxonomy — by functional utility, user
+          impact, and place in the safety lifecycle — is being developed in parallel.
+        </p>
+      </div>
+      <aside class="tm-submit">
+        <span class="eyebrow">Contribute</span>
+        <h3>Submit a tool</h3>
+        <p>Know a tool that belongs on the map? Submit it via our form — internal,
+        open-source, and user-facing tools all welcome.</p>
+        <a class="tm-submit__btn" href={site.toolingMapSubmissionUrl} rel="noopener" target="_blank">
+          Open submission form
+          <svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true">
+            <path d="M1 5H13M13 5L9 1M13 5L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          </svg>
+        </a>
+        <p class="tm-submit__note">Submissions are reviewed by committee members before publication.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="container tm-browse">
+    <div class="tm-toolbar" role="region" aria-label="Browse controls">
+      <div class="tm-toolbar__left">
+        <div class="view-switch" role="tablist" aria-label="View mode">
+          <button type="button" class="view-switch__btn" data-view="map" aria-selected="true" role="tab">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 3.5L5 2L9 3.5L13 2V10.5L9 12L5 10.5L1 12V3.5Z M5 2V10.5 M9 3.5V12" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round" /></svg>
+            Map
+          </button>
+          <button type="button" class="view-switch__btn" data-view="cards" aria-selected="false" role="tab">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="1.5" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.2" fill="none" /><rect x="8" y="1.5" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.2" fill="none" /><rect x="1" y="8" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.2" fill="none" /><rect x="8" y="8" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
+            Cards
+          </button>
+        </div>
+        <p class="tm-toolbar__count">
+          <span data-tool-count>{tools.length}</span> tools · {neighborhoods.length} neighbourhoods
+        </p>
+      </div>
+
+      <label class="tm-search" data-view-only="cards">
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3" fill="none" /><path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+        <input
+          type="search"
+          placeholder="Search by name, owner, or description"
+          data-search-input
+          aria-label="Search tools"
+        />
+      </label>
+    </div>
+
+    {/* ============ MAP VIEW ============ */}
+    <div class="map-wrap" data-view-panel="map">
+      <div class="map-controls">
+        <button type="button" class="map-ctrl" data-zoom="in" aria-label="Zoom in">+</button>
+        <button type="button" class="map-ctrl" data-zoom="out" aria-label="Zoom out">−</button>
+        <button type="button" class="map-ctrl map-ctrl--text" data-zoom="reset">Reset</button>
+      </div>
+      <p class="map-hint">Click + drag to pan · scroll to zoom · click a pin to open the tool</p>
+
+      <div class="map-viewport" data-map-viewport>
+        <div class="map-canvas" data-map-canvas>
+          <img
+            src={mapImage}
+            alt="Tooling Map illustration: a hand-drawn continent with six labelled neighbourhoods — Classifier Quarter, Guardrail Heights, Automation Alley, Reviewer's Row, Investigation Inlet, and The Hashlands."
+            class="map-bg-img"
+            width="800"
+            height="600"
+            draggable="false"
+          />
+
+          {neighborhoods.map((n) => {
+            const ts = toolsByNeighborhood[n.id];
+            const positions = placePins(n.region, ts.length);
+            return (
+              <div class="district" data-district={n.id}>
+                {ts.map((t, i) => {
+                  const p = positions[i];
+                  return (
+                    <div class="pin" style={`left: ${p.x}px; top: ${p.y}px; ${styleVars(n.hue, n.sat)}`}>
+                      <a
+                        class={`pin__link${t.url ? "" : " pin__link--no-url"}`}
+                        href={t.url || "#"}
+                        rel={t.url ? "noopener" : undefined}
+                        target={t.url ? "_blank" : undefined}
+                        aria-label={`${t.name}${t.owner ? ` by ${t.owner}` : ""}`}
+                      >
+                        <span class="pin__dot" aria-hidden="true"></span>
+                        <span class="pin__label">{t.name}</span>
+                      </a>
+                      {(t.description || t.owner) && (
+                        <div class="pin__tip" role="tooltip">
+                          <strong class="pin__tip-name">{t.name}</strong>
+                          {t.owner && <span class="pin__tip-owner">{t.owner}</span>}
+                          {t.description && <p class="pin__tip-desc">{t.description}</p>}
+                          <span class="pin__tip-district">{n.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {stranded.length > 0 && (
+        <div class="adrift">
+          <span class="adrift__label">Adrift — awaiting a neighbourhood</span>
+          <ul>
+            {stranded.map((t) => (
+              <li>
+                <a
+                  href={t.url || "#"}
+                  rel={t.url ? "noopener" : undefined}
+                  target={t.url ? "_blank" : undefined}
+                >{t.name}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+
+    {/* ============ CARDS VIEW ============ */}
+    <div class="cards-wrap" data-view-panel="cards" hidden>
+      <div class="cards-grid">
+        <aside class="cards-filter">
+          <h3 class="cards-filter__title">Topic</h3>
+          <ul class="cards-filter__list" role="group" aria-label="Filter by topic">
+            {allTopics.map((t) => {
+              const n = neighborhoods.find((n) => n.topics.includes(t));
+              return (
+                <li>
+                  <label class="filter-row">
+                    <input type="checkbox" data-topic-checkbox value={t} />
+                    <span
+                      class="filter-row__swatch"
+                      style={styleVars(n?.hue ?? 30, n?.sat ?? 8)}
+                      aria-hidden="true"
+                    ></span>
+                    <span class="filter-row__label">{t}</span>
+                    <span class="filter-row__count">{topicCounts[t]}</span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          <button type="button" class="cards-filter__clear" data-clear-filters>Clear filters</button>
+        </aside>
+
+        <ul class="cards-list" data-cards-list>
+          {sortedTools.map((t) => (
+            <li
+              class="card"
+              data-card
+              data-topics={t.topics.join("|")}
+              data-search={`${t.name} ${t.owner ?? ""} ${t.description ?? ""}`.toLowerCase()}
+            >
+              <div class="card__head">
+                <h3 class="card__name">
+                  {t.url ? (
+                    <a href={t.url} rel="noopener" target="_blank">
+                      {t.name}
+                      <svg class="card__arrow" width="11" height="11" viewBox="0 0 11 11" aria-hidden="true">
+                        <path d="M2 9L9 2M9 2H3.5M9 2V7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                      </svg>
+                    </a>
+                  ) : (
+                    <span>{t.name}</span>
+                  )}
+                </h3>
+                {t.owner && <span class="card__owner">{t.owner}</span>}
+              </div>
+              {t.description ? (
+                <p class="card__desc">{t.description}</p>
+              ) : (
+                <p class="card__desc card__desc--empty">No description provided yet.</p>
+              )}
+              <ul class="card__topics">
+                {t.topics.map((topic) => {
+                  const n = neighborhoods.find((n) => n.topics.includes(topic));
+                  return (
+                    <li>
+                      <span class="card__topic" style={styleVars(n?.hue ?? 30, n?.sat ?? 8)}>{topic}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <p class="cards-empty" data-cards-empty hidden>No tools match your filters.</p>
+    </div>
+  </section>
+
+  <section class="container tm-taxonomy">
+    <header class="tm-taxonomy__header">
+      <span class="eyebrow">Where the taxonomy is going</span>
+      <h2>The proposed dimensions of the formal map.</h2>
+      <p>
+        As the committee firms up the taxonomy, each tool will be re-classified along
+        three dimensions. The neighbourhoods on the map are a first cut; these are the
+        more granular structures the committee plans to publish alongside the dataset.
+      </p>
+    </header>
+
+    <div class="axes-grid">
+      <div class="axis">
+        <span class="axis__label">Dimension i</span>
+        <h3>Functional utility</h3>
+        <p>What the tool actually does — classification, hash matching, review
+        workflow, identity assurance, transparency reporting, and so on.</p>
+      </div>
+      <div class="axis">
+        <span class="axis__label">Dimension ii</span>
+        <h3>Lifecycle position</h3>
+        <p>Where in the safety lifecycle the tool acts — from preventative design,
+        through detection, into responsive enforcement, and on to restorative
+        measures.</p>
+      </div>
+      <div class="axis">
+        <span class="axis__label">Dimension iii</span>
+        <h3>Impact on user experience</h3>
+        <p>Whether the tool is internal (used by reviewers, engineers, or analysts)
+        or user-facing (felt directly by people on the platform), and how visibly
+        it shapes their experience.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // ───────── View switch ─────────
+  const viewButtons = document.querySelectorAll<HTMLButtonElement>("[data-view]");
+  const viewPanels = document.querySelectorAll<HTMLElement>("[data-view-panel]");
+  const viewOnly = document.querySelectorAll<HTMLElement>("[data-view-only]");
+
+  const setView = (v: string) => {
+    viewButtons.forEach((b) => b.setAttribute("aria-selected", b.dataset.view === v ? "true" : "false"));
+    viewPanels.forEach((p) => (p.hidden = p.dataset.viewPanel !== v));
+    viewOnly.forEach((el) => (el.hidden = el.dataset.viewOnly !== v));
+  };
+  viewButtons.forEach((btn) => btn.addEventListener("click", () => setView(btn.dataset.view!)));
+
+  // ───────── Map pan + zoom ─────────
+  const viewport = document.querySelector<HTMLElement>("[data-map-viewport]");
+  const canvas = document.querySelector<HTMLElement>("[data-map-canvas]");
+  const CANVAS_W = 800;
+  const CANVAS_H = 600;
+
+  if (viewport && canvas) {
+    let scale = 1;
+    let tx = 0;
+    let ty = 0;
+    let dragging = false;
+    let pointerId: number | null = null;
+    let startX = 0;
+    let startY = 0;
+    let startTx = 0;
+    let startTy = 0;
+    let didDrag = false;
+
+    const apply = () => {
+      canvas.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    };
+    const clampScale = (s: number) => Math.max(0.5, Math.min(4, s));
+
+    const fit = () => {
+      const vr = viewport.getBoundingClientRect();
+      const k = Math.min(vr.width / CANVAS_W, vr.height / CANVAS_H) * 0.96;
+      scale = clampScale(k);
+      tx = (vr.width - CANVAS_W * scale) / 2;
+      ty = (vr.height - CANVAS_H * scale) / 2;
+      apply();
+    };
+    fit();
+    window.addEventListener("resize", fit);
+
+    viewport.addEventListener("pointerdown", (e) => {
+      if ((e.target as HTMLElement).closest("a")) return;
+      dragging = true;
+      didDrag = false;
+      pointerId = e.pointerId;
+      viewport.setPointerCapture(e.pointerId);
+      viewport.classList.add("is-panning");
+      startX = e.clientX;
+      startY = e.clientY;
+      startTx = tx;
+      startTy = ty;
+    });
+    viewport.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) + Math.abs(dy) > 3) didDrag = true;
+      tx = startTx + dx;
+      ty = startTy + dy;
+      apply();
+    });
+    const stopDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (pointerId !== null) viewport.releasePointerCapture(pointerId);
+      viewport.classList.remove("is-panning");
+    };
+    viewport.addEventListener("pointerup", stopDrag);
+    viewport.addEventListener("pointercancel", stopDrag);
+
+    viewport.addEventListener(
+      "click",
+      (e) => {
+        if (didDrag) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      },
+      true,
+    );
+
+    viewport.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        const rect = viewport.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const next = clampScale(scale * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+        const k = next / scale;
+        tx = cx - (cx - tx) * k;
+        ty = cy - (cy - ty) * k;
+        scale = next;
+        apply();
+      },
+      { passive: false },
+    );
+
+    document.querySelectorAll<HTMLButtonElement>("[data-zoom]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const action = b.dataset.zoom;
+        const vr = viewport.getBoundingClientRect();
+        const cx = vr.width / 2;
+        const cy = vr.height / 2;
+        if (action === "reset") {
+          fit();
+          return;
+        }
+        const next = clampScale(scale * (action === "in" ? 1.25 : 1 / 1.25));
+        const k = next / scale;
+        tx = cx - (cx - tx) * k;
+        ty = cy - (cy - ty) * k;
+        scale = next;
+        apply();
+      });
+    });
+  }
+
+  // ───────── Card view: search + topic filter ─────────
+  const cards = document.querySelectorAll<HTMLElement>("[data-card]");
+  const searchInput = document.querySelector<HTMLInputElement>("[data-search-input]");
+  const topicBoxes = document.querySelectorAll<HTMLInputElement>("[data-topic-checkbox]");
+  const cardsEmpty = document.querySelector<HTMLElement>("[data-cards-empty]");
+  const toolCountEl = document.querySelector<HTMLElement>("[data-tool-count]");
+  const clearBtn = document.querySelector<HTMLButtonElement>("[data-clear-filters]");
+  const totalCount = cards.length;
+
+  const applyFilters = () => {
+    const q = (searchInput?.value || "").trim().toLowerCase();
+    const active = Array.from(topicBoxes).filter((b) => b.checked).map((b) => b.value);
+    let visible = 0;
+    cards.forEach((card) => {
+      const search = card.dataset.search || "";
+      const topics = (card.dataset.topics || "").split("|").filter(Boolean);
+      const matchQ = !q || search.includes(q);
+      const matchT = active.length === 0 || active.some((t) => topics.includes(t));
+      const show = matchQ && matchT;
+      card.hidden = !show;
+      if (show) visible += 1;
+    });
+    if (cardsEmpty) cardsEmpty.hidden = visible !== 0;
+    if (toolCountEl) toolCountEl.textContent = String(q || active.length ? visible : totalCount);
+  };
+  searchInput?.addEventListener("input", applyFilters);
+  topicBoxes.forEach((b) => b.addEventListener("change", applyFilters));
+  clearBtn?.addEventListener("click", () => {
+    if (searchInput) searchInput.value = "";
+    topicBoxes.forEach((b) => (b.checked = false));
+    applyFilters();
+  });
+</script>
+
+<style>
+  /* ============== Intro ============== */
+  .tm-intro { padding-block: var(--space-8) var(--space-7); }
+  .tm-intro__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--space-8); align-items: start; }
+  .tm-intro__lead h2 { font-size: var(--step-3); margin-bottom: var(--space-4); max-width: 18ch; }
+  .tm-intro__lead p { color: var(--ink-soft); font-size: var(--step-0); line-height: 1.65; max-width: 38rem; }
+  .tm-intro__lead p + p { margin-top: var(--space-4); }
+
+  .tm-submit { padding: var(--space-6); background: var(--accent-tint); border: 1px solid var(--accent-soft); border-radius: var(--radius-md); position: sticky; top: 6rem; }
+  .tm-submit h3 { margin-top: var(--space-3); font-size: var(--step-2); font-weight: 460; font-variation-settings: "opsz" 36; }
+  .tm-submit p { margin-top: var(--space-3); color: var(--ink-soft); font-size: var(--step--1); line-height: 1.55; }
+  .tm-submit__btn { margin-top: var(--space-4); display: inline-flex; align-items: center; gap: 0.5em; padding: 0.85em 1.4em; border-radius: 999px; background: var(--accent); color: var(--paper); font-size: var(--step--1); font-weight: 540; text-decoration: none; transition: background 200ms var(--ease); }
+  .tm-submit__btn:hover { background: var(--accent-deep); color: var(--paper); text-decoration: none; }
+  .tm-submit__note { margin-top: var(--space-3); color: var(--muted); font-size: 0.78rem; }
+  @media (max-width: 880px) { .tm-intro__grid { grid-template-columns: 1fr; } .tm-submit { position: static; } }
+
+  /* ============== Browse area ============== */
+  .tm-browse { padding-block: var(--space-6) var(--space-8); border-top: 1px solid var(--rule); }
+
+  /* Toolbar */
+  .tm-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; margin-bottom: var(--space-5); }
+  .tm-toolbar__left { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+  .tm-toolbar__count { font-size: var(--step--1); color: var(--muted); margin: 0; }
+  .tm-toolbar__count [data-tool-count] { color: var(--accent-deep); font-weight: 540; }
+
+  .view-switch { display: inline-flex; padding: 3px; background: var(--paper-soft); border: 1px solid var(--rule); border-radius: 999px; }
+  .view-switch__btn { display: inline-flex; align-items: center; gap: 0.5em; padding: 0.55em 1em; border: 0; background: transparent; color: var(--muted); font-family: inherit; font-size: var(--step--1); font-weight: 520; cursor: pointer; border-radius: 999px; transition: background 180ms var(--ease), color 180ms var(--ease); }
+  .view-switch__btn:hover { color: var(--ink); }
+  .view-switch__btn[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(28, 27, 23, 0.08); }
+
+  .tm-search { display: inline-flex; align-items: center; gap: 0.5em; padding: 0.55em 1em; background: var(--surface); border: 1px solid var(--rule); border-radius: 999px; min-width: min(28rem, 100%); color: var(--muted); transition: border-color 160ms var(--ease); }
+  .tm-search:focus-within { border-color: var(--accent); color: var(--ink); }
+  .tm-search input { flex: 1; border: 0; outline: none; background: transparent; font: inherit; font-size: var(--step--1); color: var(--ink); min-width: 0; }
+  .tm-search input::placeholder { color: var(--muted-soft); }
+
+  /* ============== Map view ============== */
+  .map-wrap {
+    position: relative;
+    background: hsl(43 60% 78%); /* match the map's water/parchment edge */
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .map-controls {
+    position: absolute; bottom: var(--space-4); right: var(--space-4); z-index: 4;
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-sm);
+    padding: 4px; box-shadow: 0 4px 16px -8px rgba(28, 27, 23, 0.15);
+  }
+  .map-ctrl { appearance: none; border: 0; background: transparent; color: var(--ink); font-family: inherit; font-size: 1.05rem; font-weight: 500; width: 2.1rem; height: 2.1rem; border-radius: 4px; cursor: pointer; transition: background 160ms var(--ease); }
+  .map-ctrl:hover { background: var(--paper-soft); }
+  .map-ctrl--text { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); width: auto; padding-inline: 0.7em; font-weight: 540; }
+
+  .map-hint {
+    position: absolute; bottom: var(--space-4); left: var(--space-4); z-index: 4;
+    font-size: 0.74rem; color: var(--ink-soft);
+    background: color-mix(in oklab, var(--surface) 92%, transparent);
+    padding: 0.4em 0.9em; border-radius: 999px; border: 1px solid var(--rule);
+    backdrop-filter: blur(6px); margin: 0; pointer-events: none;
+  }
+
+  .map-viewport {
+    width: 100%;
+    height: clamp(34rem, 72vh, 50rem);
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    position: relative;
+  }
+  .map-viewport.is-panning { cursor: grabbing; }
+
+  .map-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 800px;
+    height: 600px;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+  .map-bg-img {
+    position: absolute;
+    inset: 0;
+    width: 800px;
+    height: 600px;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+
+  .district { position: absolute; inset: 0; pointer-events: none; }
+  .district .pin { pointer-events: auto; }
+
+  /* Pins on the map */
+  .pin {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+  .pin__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: transform 180ms var(--ease);
+  }
+  .pin__link:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+    z-index: 5;
+  }
+  .pin__link--no-url { cursor: default; }
+  .pin__link--no-url:hover { transform: none; }
+
+  .pin__dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 30%, hsl(var(--h) calc(var(--s) + 5%) 78%), hsl(var(--h) var(--s) 45%) 100%);
+    border: 2px solid #fcf7e8;
+    box-shadow:
+      0 0 0 1.5px hsl(var(--h) var(--s) 30%),
+      0 2px 4px rgba(40, 20, 8, 0.4);
+    transition: transform 180ms var(--ease), box-shadow 180ms var(--ease);
+  }
+  .pin__link:hover .pin__dot {
+    transform: scale(1.25);
+    box-shadow:
+      0 0 0 1.5px hsl(var(--h) var(--s) 30%),
+      0 4px 10px rgba(40, 20, 8, 0.55);
+  }
+
+  .pin__label {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    color: hsl(24 30% 18%);
+    background: rgba(252, 247, 232, 0.93);
+    border: 1px solid rgba(40, 20, 8, 0.18);
+    padding: 1px 5px;
+    border-radius: 3px;
+    line-height: 1.2;
+    text-align: center;
+    max-width: 13ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(40, 20, 8, 0.18);
+    letter-spacing: 0.01em;
+  }
+
+  /* Pin tooltip */
+  .pin__tip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    min-width: 14rem;
+    max-width: 20rem;
+    padding: 10px 12px;
+    background: hsl(24 30% 14%);
+    color: var(--paper);
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.45;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 160ms var(--ease), transform 200ms var(--ease), visibility 160ms;
+    z-index: 20;
+    box-shadow: 0 12px 30px -10px rgba(28, 27, 23, 0.6);
+    white-space: normal;
+    text-align: left;
+  }
+  .pin__tip::after {
+    content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: hsl(24 30% 14%);
+  }
+  .pin:hover .pin__tip,
+  .pin:focus-within .pin__tip {
+    opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+  }
+  .pin__tip-name {
+    display: block; font-family: var(--font-display); font-size: 13px; font-weight: 500;
+    color: var(--paper); font-variation-settings: "opsz" 24, "SOFT" 30;
+    letter-spacing: -0.005em;
+  }
+  .pin__tip-owner {
+    display: block; margin-top: 2px; font-size: 10px;
+    color: color-mix(in oklab, var(--paper) 70%, hsl(24 30% 14%)); letter-spacing: 0.03em;
+  }
+  .pin__tip-desc {
+    margin: 6px 0 0; color: color-mix(in oklab, var(--paper) 88%, hsl(24 30% 14%));
+    font-size: 11px; line-height: 1.45; white-space: pre-line;
+  }
+  .pin__tip-district {
+    display: block; margin-top: 8px; font-size: 9px;
+    color: color-mix(in oklab, var(--paper) 60%, hsl(24 30% 14%));
+    letter-spacing: 0.12em; text-transform: uppercase; font-weight: 540;
+  }
+
+  .adrift {
+    display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+    margin-top: var(--space-4); padding: var(--space-3) var(--space-4);
+    background: var(--paper-soft); border: 1px dashed var(--rule);
+    border-radius: var(--radius-sm); font-size: var(--step--1);
+  }
+  .adrift__label {
+    font-family: var(--font-display); font-style: italic; color: var(--muted);
+    font-variation-settings: "opsz" 14, "SOFT" 100;
+  }
+  .adrift ul { list-style: none; padding: 0; margin: 0; display: flex; gap: var(--space-2); flex-wrap: wrap; }
+  .adrift a {
+    padding: 0.2em 0.6em; background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 999px; font-size: 0.78rem; color: var(--ink-soft); text-decoration: none;
+  }
+  .adrift a:hover { border-color: var(--accent); color: var(--accent-deep); text-decoration: none; }
+
+  /* ============== Cards view ============== */
+  .cards-wrap { margin-top: var(--space-2); }
+  .cards-grid { display: grid; grid-template-columns: 16rem 1fr; gap: var(--space-7); align-items: start; }
+  @media (max-width: 880px) { .cards-grid { grid-template-columns: 1fr; } }
+
+  .cards-filter {
+    position: sticky; top: 5.5rem; padding: var(--space-5);
+    background: var(--paper-soft); border: 1px solid var(--rule-soft);
+    border-radius: var(--radius-md); max-height: calc(100vh - 7rem); overflow-y: auto;
+  }
+  @media (max-width: 880px) { .cards-filter { position: static; max-height: none; } }
+  .cards-filter__title {
+    font-family: var(--font-body); font-size: 0.7rem; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: var(--space-3);
+  }
+  .cards-filter__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+  .filter-row {
+    display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 0.6em;
+    padding: 0.45em 0.5em; border-radius: var(--radius-sm); cursor: pointer; transition: background 140ms var(--ease);
+  }
+  .filter-row:hover { background: var(--surface); }
+  .filter-row input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+  .filter-row__swatch { width: 10px; height: 10px; border-radius: 50%; background: hsl(var(--h) var(--s) 55%); }
+  .filter-row__label { font-size: var(--step--1); color: var(--ink); }
+  .filter-row__count { font-size: 0.78rem; color: var(--muted); }
+  .cards-filter__clear {
+    margin-top: var(--space-4); appearance: none; background: transparent; border: 0;
+    color: var(--muted); font: inherit; font-size: 0.78rem; letter-spacing: 0.04em;
+    cursor: pointer; padding: 0.4em 0;
+  }
+  .cards-filter__clear:hover { color: var(--accent-deep); }
+
+  .cards-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+  @media (max-width: 1100px) { .cards-list { grid-template-columns: 1fr; } }
+
+  .card {
+    display: flex; flex-direction: column; gap: var(--space-3);
+    padding: var(--space-5); background: var(--surface); border: 1px solid var(--rule);
+    border-radius: var(--radius-md); transition: border-color 200ms var(--ease), transform 200ms var(--ease);
+  }
+  .card:hover { border-color: var(--accent-soft); transform: translateY(-1px); }
+  .card__head { display: flex; flex-direction: column; gap: 2px; }
+  .card__name {
+    font-family: var(--font-display); font-size: var(--step-1); font-weight: 460;
+    line-height: 1.2; font-variation-settings: "opsz" 24, "SOFT" 30; margin: 0; letter-spacing: -0.005em;
+  }
+  .card__name a { color: var(--ink); text-decoration: none; display: inline-flex; align-items: baseline; gap: 0.3em; }
+  .card__name a:hover { color: var(--accent-deep); }
+  .card__name a:hover .card__arrow { transform: translate(2px, -2px); }
+  .card__arrow { color: var(--accent); opacity: 0.7; flex-shrink: 0; transition: transform 200ms var(--ease); }
+  .card__owner { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.02em; }
+  .card__desc {
+    color: var(--ink-soft); font-size: var(--step--1); line-height: 1.55; margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 5; line-clamp: 5; -webkit-box-orient: vertical;
+    overflow: hidden; white-space: pre-line;
+  }
+  .card__desc--empty { color: var(--muted-soft); font-style: italic; }
+  .card__topics { list-style: none; padding: 0; margin: auto 0 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .card__topic {
+    display: inline-block; padding: 0.25em 0.7em; border-radius: 999px;
+    background: hsl(var(--h) var(--s) 92%); border: 1px solid hsl(var(--h) var(--s) 65% / 0.55);
+    color: hsl(var(--h) var(--s) 28%); font-size: 0.72rem; font-weight: 540; letter-spacing: 0.02em;
+  }
+  .cards-empty { margin: var(--space-7) 0; text-align: center; color: var(--muted); font-style: italic; }
+
+  /* ============== Future taxonomy ============== */
+  .tm-taxonomy { padding-block: var(--space-8) var(--space-9); border-top: 1px solid var(--rule); }
+  .tm-taxonomy__header { max-width: 44rem; margin-bottom: var(--space-7); }
+  .tm-taxonomy__header h2 { margin-top: var(--space-2); font-size: var(--step-4); }
+  .tm-taxonomy__header p { margin-top: var(--space-4); color: var(--ink-soft); line-height: 1.6; }
+  .axes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); }
+  .axis { padding: var(--space-5); background: var(--paper-soft); border: 1px solid var(--rule-soft); border-radius: var(--radius-md); }
+  .axis__label { font-family: var(--font-display); font-style: italic; font-size: var(--step--1); color: var(--accent); font-variation-settings: "opsz" 14, "SOFT" 100; letter-spacing: 0.04em; }
+  .axis h3 { margin-top: var(--space-2); font-size: var(--step-1); font-weight: 500; font-variation-settings: "opsz" 24; margin-bottom: var(--space-3); }
+  .axis p { font-size: var(--step--1); line-height: 1.55; color: var(--ink-soft); }
+  @media (max-width: 880px) { .axes-grid { grid-template-columns: 1fr; } }
+</style>

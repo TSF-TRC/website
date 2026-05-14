@@ -1,0 +1,120 @@
+---
+import type { Workstream } from "~/data/workstreams";
+
+type Props = {
+  workstream: Workstream;
+  status?: string;
+};
+const { workstream: w, status = "Forming · Year one" } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<header class="ws-hero">
+  <div class="container ws-hero__inner">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href={`${base}/workstreams`}>Workstreams</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{w.shortTitle}</span>
+    </nav>
+    <div class="ws-hero__meta">
+      <span class="ws-hero__num">{w.number}</span>
+      <span class="ws-hero__rule" aria-hidden="true"></span>
+      <span class="ws-hero__status">{status}</span>
+    </div>
+    <h1 class="ws-hero__title">{w.title}</h1>
+    <p class="ws-hero__tag">{w.tagline}</p>
+    <p class="lede ws-hero__desc">{w.description}</p>
+  </div>
+</header>
+
+<style>
+  .ws-hero {
+    padding-block: var(--space-7) var(--space-7);
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ws-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(50rem 28rem at 90% -20%, var(--accent-tint), transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .ws-hero__inner {
+    position: relative;
+    z-index: 1;
+    max-width: var(--measure-wide);
+  }
+
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .breadcrumbs a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .breadcrumbs a:hover { color: var(--accent-deep); text-decoration: underline; }
+
+  .ws-hero__meta {
+    margin-top: var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .ws-hero__num {
+    font-family: var(--font-display);
+    font-size: var(--step-4);
+    font-weight: 440;
+    color: var(--accent);
+    line-height: 1;
+    font-variation-settings: "opsz" 60, "SOFT" 30;
+  }
+
+  .ws-hero__rule {
+    width: 3rem;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .ws-hero__status {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 540;
+  }
+
+  .ws-hero__title {
+    margin-top: var(--space-4);
+    font-size: var(--step-6);
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+    max-width: 22ch;
+  }
+
+  .ws-hero__tag {
+    margin-top: var(--space-4);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--step-2);
+    font-weight: 380;
+    color: var(--accent-deep);
+    font-variation-settings: "opsz" 36, "SOFT" 100;
+    max-width: 38rem;
+  }
+
+  .ws-hero__desc {
+    margin-top: var(--space-5);
+    max-width: 44rem;
+  }
+</style>
