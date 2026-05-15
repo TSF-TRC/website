@@ -13,6 +13,7 @@ const isActive = (href: string) => {
 };
 
 const workstreamsActive = isActive("/workstreams");
+const aboutActive = isActive("/about");
 ---
 
 <header class="site-header">
@@ -24,13 +25,45 @@ const workstreamsActive = isActive("/workstreams");
 
     <nav class="primary-nav" aria-label="Primary">
       <ul>
-        <li>
-          <a
-            href={`${base}/about`}
-            aria-current={isActive("/about") ? "page" : undefined}
+        <li class="nav-menu" data-nav-menu>
+          <button
+            type="button"
+            class="nav-menu__trigger"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="about-menu"
+            aria-current={aboutActive ? "page" : undefined}
+            data-nav-trigger
           >
-            About
-          </a>
+            <span>About</span>
+            <svg class="nav-menu__chevron" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+              <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            </svg>
+          </button>
+          <div class="nav-menu__panel nav-menu__panel--narrow" role="menu" id="about-menu" aria-label="About">
+            <a
+              class="nav-menu__overview"
+              href={`${base}/about`}
+              role="menuitem"
+            >
+              <span class="nav-menu__overview-label">About the committee</span>
+              <span class="nav-menu__overview-note">Mission and goals →</span>
+            </a>
+            <ul class="nav-menu__list">
+              <li>
+                <a
+                  href={`${base}/about#members`}
+                  role="menuitem"
+                  class="nav-menu__item nav-menu__item--simple"
+                >
+                  <span class="nav-menu__item-body">
+                    <span class="nav-menu__item-title">Members</span>
+                    <span class="nav-menu__item-tag">Co-chairs and the full committee roster</span>
+                  </span>
+                </a>
+              </li>
+            </ul>
+          </div>
         </li>
 
         <li class="nav-menu" data-nav-menu>
@@ -96,13 +129,29 @@ const workstreamsActive = isActive("/workstreams");
 </header>
 
 <script>
-  // Workstreams dropdown — click/keyboard toggle, hover handled in CSS.
-  const root = document.querySelector<HTMLElement>("[data-nav-menu]");
-  if (root) {
-    const trigger = root.querySelector<HTMLButtonElement>("[data-nav-trigger]")!;
-    const panel = root.querySelector<HTMLElement>(".nav-menu__panel")!;
+  // Nav-bar dropdowns — click/keyboard toggle, hover handled in CSS.
+  // Each `[data-nav-menu]` is an independent disclosure; opening one closes
+  // any others that happen to be open.
+  const menus = document.querySelectorAll<HTMLElement>("[data-nav-menu]");
+
+  menus.forEach((root) => {
+    const trigger = root.querySelector<HTMLButtonElement>("[data-nav-trigger]");
+    const panel = root.querySelector<HTMLElement>(".nav-menu__panel");
+    if (!trigger || !panel) return;
+
+    const closeOthers = () => {
+      menus.forEach((other) => {
+        if (other === root) return;
+        other.querySelector<HTMLButtonElement>("[data-nav-trigger]")?.setAttribute(
+          "aria-expanded",
+          "false",
+        );
+        delete (other as HTMLElement).dataset.open;
+      });
+    };
 
     const open = () => {
+      closeOthers();
       trigger.setAttribute("aria-expanded", "true");
       root.dataset.open = "true";
     };
@@ -134,15 +183,35 @@ const workstreamsActive = isActive("/workstreams");
         trigger.focus();
       }
     });
+  });
 
-    document.addEventListener("click", (e) => {
-      if (!root.contains(e.target as Node)) close();
-    });
-
-    document.addEventListener("focusin", (e) => {
-      if (!root.contains(e.target as Node)) close();
-    });
-  }
+  // Outside-click and outside-focus close any open menu.
+  const isInsideAny = (target: Node | null) => {
+    if (!target) return false;
+    return Array.from(menus).some((m) => m.contains(target));
+  };
+  document.addEventListener("click", (e) => {
+    if (!isInsideAny(e.target as Node)) {
+      menus.forEach((m) => {
+        m.querySelector<HTMLButtonElement>("[data-nav-trigger]")?.setAttribute(
+          "aria-expanded",
+          "false",
+        );
+        delete (m as HTMLElement).dataset.open;
+      });
+    }
+  });
+  document.addEventListener("focusin", (e) => {
+    if (!isInsideAny(e.target as Node)) {
+      menus.forEach((m) => {
+        m.querySelector<HTMLButtonElement>("[data-nav-trigger]")?.setAttribute(
+          "aria-expanded",
+          "false",
+        );
+        delete (m as HTMLElement).dataset.open;
+      });
+    }
+  });
 </script>
 
 <style>
@@ -288,6 +357,10 @@ const workstreamsActive = isActive("/workstreams");
     z-index: 60;
   }
 
+  .nav-menu__panel--narrow {
+    width: 18rem;
+  }
+
   .nav-menu:hover .nav-menu__panel,
   .nav-menu:focus-within .nav-menu__panel,
   .nav-menu[data-open] .nav-menu__panel {
@@ -359,6 +432,10 @@ const workstreamsActive = isActive("/workstreams");
     text-decoration: none;
     color: var(--ink);
     transition: background 160ms var(--ease);
+  }
+
+  .nav-menu__item--simple {
+    grid-template-columns: 1fr;
   }
 
   .nav-menu__item:hover,

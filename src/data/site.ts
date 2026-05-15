@@ -1,7 +1,7 @@
 export const site = {
   name: "Tooling Research Committee",
   shortName: "TRC",
-  tagline: "A research committee of the Trust & Safety Foundation",
+  tagline: "A website managed by the tooling research committee of the Trust & Safety Foundation",
   description:
     "The Tooling Research Committee is a research committee of the Trust & Safety Foundation, bringing together researchers, practitioners, and engineers to advance the tools that protect online communities and to make the research behind them more discoverable.",
   parent: {

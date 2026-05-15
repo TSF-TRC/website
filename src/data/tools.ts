@@ -3,7 +3,7 @@
 // Ingested from the committee's preliminary tool collection
 // (T&S tool collection.xlsx). Topic tags are the committee's
 // initial bucketing — they will be revised as the formal
-// taxonomy is finalized.
+// map is finalized.
 //
 // To add a tool, append a record below or submit via the
 // Google Form linked on the workstream page; the committee

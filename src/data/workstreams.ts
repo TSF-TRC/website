@@ -31,9 +31,9 @@ export const workstreams: Workstream[] = [
     number: "03",
     title: "Functional Mapping of the Safety Tooling Landscape",
     shortTitle: "Tooling Map",
-    tagline: "A living taxonomy of the tools that keep platforms safer.",
+    tagline: "A living map of the tools that keep platforms safer.",
     description:
-      "Existing frameworks for safety tooling lack the granularity required to map a rapidly diversifying ecosystem of internal and user-facing interventions. This workstream develops a comprehensive taxonomy — categorizing tools by functional utility, impact on user experience, and role in the safety lifecycle, from preventative design to reactive enforcement — and publishes it as a living, browsable resource.",
+      "Existing frameworks for safety tooling lack the granularity required to map a rapidly diversifying ecosystem of internal and user-facing interventions. This workstream develops a comprehensive map, categorizing tools by functional utility, impact on user experience, and role in the safety lifecycle, from preventative design to reactive enforcement — and publishes it as a living, browsable resource.",
   },
 ];
 
