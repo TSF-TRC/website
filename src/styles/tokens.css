@@ -1,8 +1,11 @@
 :root {
-  /* Type families */
-  --font-display: "Fraunces Variable", "Fraunces", Georgia, "Times New Roman", serif;
-  --font-body: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* Type families — TSF brand book:
+     Headlines use Gilroy ExtraBold; Poppins is the brand book's
+     designated substitute (used on G-Suite). DM Sans is the secondary
+     family used for subheaders, body, and annotations. */
+  --font-display: "Poppins", "Gilroy", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: "DM Sans Variable", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Type scale — fluid */
   --step--2: clamp(0.75rem, 0.72rem + 0.15vw, 0.83rem);
@@ -16,21 +19,56 @@
   --step-6:  clamp(2.6rem, 2.15rem + 2.4vw, 4.25rem);
   --step-7:  clamp(3.05rem, 2.4rem + 3.5vw, 5.5rem);
 
-  /* Color — warm editorial */
-  --paper:        #F6F1E6;
-  --paper-soft:   #FBF7EC;
+  /* Color — Trust + Safety Foundation brand palette
+     Primary:   Indigo Dye    #194F69
+     Secondary: Hunyadi Yellow #ECAE48
+     Accent:    Fern Green    #3B7342  (used sparingly)
+     Background:Parchment     #F5ECCD
+     Text:      Jet Black     #333333  */
+
+  /* Brand swatches (raw) */
+  --tsf-indigo:        #194F69;
+  --tsf-indigo-deep:   #103B4F;
+  --tsf-indigo-soft:   #B6CCD6;
+  --tsf-indigo-tint:   #E2ECF1;
+  --tsf-yellow:        #ECAE48;
+  --tsf-yellow-soft:   #F6D496;
+  --tsf-yellow-tint:   #FBEACA;
+  --tsf-green:         #3B7342;
+  --tsf-green-soft:    #B7CFBA;
+  --tsf-parchment:     #F5ECCD;
+  --tsf-parchment-soft:#FAF4E2;
+  --tsf-jet:           #333333;
+
+  /* Surfaces */
+  --paper:        var(--tsf-parchment-soft);
+  --paper-soft:   #FDF8E8;
   --surface:      #FFFFFF;
-  --ink:          #1A1814;
-  --ink-soft:     #2C2922;
-  --muted:        #6C6557;
-  --muted-soft:   #8E8674;
-  --rule:         #D9CFB8;
-  --rule-soft:    #E8DFC9;
-  --accent:       #2D5A4A;
-  --accent-deep:  #1F4337;
-  --accent-soft:  #C7DAD0;
-  --accent-tint:  #E8F0EB;
-  --highlight:    #E7B860;
+
+  /* Ink + muted greys (Jet Black family) */
+  --ink:          var(--tsf-jet);
+  --ink-soft:     #4A4A4A;
+  --muted:        #6F6F6F;
+  --muted-soft:   #909090;
+
+  /* Rules (Parchment shadows) */
+  --rule:         #E4D9B6;
+  --rule-soft:    #EFE5C4;
+
+  /* Accent system maps to Indigo Dye */
+  --accent:       var(--tsf-indigo);
+  --accent-deep:  var(--tsf-indigo-deep);
+  --accent-soft:  var(--tsf-indigo-soft);
+  --accent-tint:  var(--tsf-indigo-tint);
+
+  /* Highlight maps to Hunyadi Yellow */
+  --highlight:        var(--tsf-yellow);
+  --highlight-soft:   var(--tsf-yellow-soft);
+  --highlight-tint:   var(--tsf-yellow-tint);
+
+  /* Used-sparingly green */
+  --secondary:        var(--tsf-green);
+  --secondary-soft:   var(--tsf-green-soft);
 
   /* Layout */
   --measure-prose: 38rem;

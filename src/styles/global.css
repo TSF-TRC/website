@@ -1,6 +1,16 @@
-@import "@fontsource-variable/fraunces/index.css";
-@import "@fontsource-variable/inter/index.css";
-@import "@fontsource-variable/jetbrains-mono/index.css";
+/* Poppins — primary display (Gilroy ExtraBold stand-in, per TSF brand book) */
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+@import "@fontsource/poppins/800.css";
+@import "@fontsource/poppins/400-italic.css";
+@import "@fontsource/poppins/600-italic.css";
+
+/* DM Sans — secondary, used for subheaders, body, annotations */
+@import "@fontsource-variable/dm-sans/index.css";
+@import "@fontsource-variable/dm-sans/opsz-italic.css";
+
 @import "./tokens.css";
 
 *, *::before, *::after {
@@ -21,7 +31,6 @@ body {
   line-height: 1.55;
   color: var(--ink);
   background: var(--paper);
-  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -29,25 +38,24 @@ body {
 
 ::selection {
   background: var(--accent);
-  color: var(--paper);
+  color: var(--tsf-parchment);
 }
 
-/* Headings — Fraunces display */
+/* Headings — Poppins display (Gilroy ExtraBold per brand book) */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  font-weight: 460;
+  font-weight: 800;
   color: var(--ink);
   line-height: 1.08;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
   margin: 0;
-  font-variation-settings: "opsz" 144, "SOFT" 30;
   text-wrap: balance;
 }
 
-h1 { font-size: var(--step-6); letter-spacing: -0.02em; font-variation-settings: "opsz" 144, "SOFT" 30; }
+h1 { font-size: var(--step-6); letter-spacing: -0.02em; }
 h2 { font-size: var(--step-4); letter-spacing: -0.015em; }
-h3 { font-size: var(--step-2); font-weight: 500; font-variation-settings: "opsz" 36; }
-h4 { font-size: var(--step-1); font-weight: 520; font-variation-settings: "opsz" 14; }
+h3 { font-size: var(--step-2); font-weight: 700; }
+h4 { font-size: var(--step-1); font-weight: 600; }
 
 p {
   margin: 0;
@@ -119,34 +127,33 @@ code, kbd, samp, pre {
   padding-inline: var(--gutter);
 }
 
-/* Small caps / eyebrow */
+/* Small caps / eyebrow — DM Sans semi bold */
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   font-family: var(--font-body);
   font-size: var(--step--2);
-  font-weight: 540;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--accent);
 }
 
 .eyebrow::before {
   content: "";
   width: 1.5rem;
   height: 1px;
-  background: currentColor;
+  background: var(--highlight);
 }
 
 .lede {
-  font-family: var(--font-display);
-  font-weight: 380;
+  font-family: var(--font-body);
+  font-weight: 400;
   font-size: var(--step-2);
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--ink-soft);
   letter-spacing: -0.005em;
-  font-variation-settings: "opsz" 36, "SOFT" 30;
   text-wrap: pretty;
 }
 
@@ -186,14 +193,13 @@ code, kbd, samp, pre {
 }
 
 .prose blockquote {
-  border-left: 2px solid var(--accent);
+  border-left: 3px solid var(--highlight);
   padding: var(--space-2) 0 var(--space-2) var(--space-5);
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: var(--step-2);
-  font-weight: 380;
+  font-weight: 500;
   line-height: 1.45;
-  font-variation-settings: "opsz" 36, "SOFT" 100;
-  color: var(--ink);
+  color: var(--accent);
 }
 
 /* Reduce motion */
@@ -213,8 +219,8 @@ code, kbd, samp, pre {
   left: 0;
   top: 0;
   padding: var(--space-3) var(--space-4);
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--accent);
+  color: var(--tsf-parchment);
   transform: translateY(-100%);
 }
 
