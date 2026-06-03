@@ -15,7 +15,6 @@ export const members: Member[] = [
   { name: "Abhishek Shrivastava" },
   { name: "Arnika Singh" },
   { name: "Cameron Martel" },
-  { name: "Claudia Flores-Saviaga" },
   { name: "Colin McCracken" },
   { name: "Cyndie Demeocq" },
   { name: "David Vinson" },
