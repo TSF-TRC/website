@@ -24,5 +24,5 @@ export const site = {
     },
   ],
   toolingMapSubmissionUrl:
-    "https://docs.google.com/forms/d/e/1FAIpQLSffD8pkTrLOqjZ-fxGASXAJ89ExDaHls2q-Twj-X8LodVaRPw/viewform?usp=publish-editor",
+    "https://docs.google.com/forms/d/e/1FAIpQLSfRwoMInbyRxx3TyZ3T9fIQ4RdidKRiuzZWHHSJReMF1j625g/viewform?usp=sharing&ouid=109711486525429347384",
 } as const;
